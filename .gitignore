@@ -1,0 +1,5 @@
+/proj_*
+!/proj_*.c
+/core
+/Makefile
+/Tut7_Random_Histo_Scatter3*
