@@ -12,7 +12,7 @@
 #endif
 
 #define MAX_SIZE 10000000
-#define ARRAY_SIZE 1000000
+#define ARRAY_SIZE 5000000
 double xpi = 3.14159;
 double c = 2.99792e8;
 double pion_mass = 0.1396;
@@ -33,7 +33,7 @@ void calc_meson_mom_lab(int count_max, double *meson_decay_dist_array, double *m
                         double meson_neutr_mom_l_lab_array[], double meson_neutr_mom_t_lab_array[],
                         double valid_neutr_energy_lab_array[], int *count_valid_neutr, double decay_prob,
                         double valid_neutr_mom_l_lab[], double valid_neutr_mom_t_lab[], double valid_neutr_decay_dist[],
-                        int *count_meson_neutr);
+                        int *count_meson_neutr, char valid_neutr_meson_type[], char this_meson_type);
 
 double dgauss(double x)
 {
@@ -311,6 +311,7 @@ int main(void)
     static double valid_neutr_mom_l_lab_array[ARRAY_SIZE];
     static double valid_neutr_mom_t_lab_array[ARRAY_SIZE];
     static double valid_neutr_decay_dist[ARRAY_SIZE];
+    static char valid_neutr_meson_type[ARRAY_SIZE];
 
     // pions
     static double pion_neutr_mom_l_lab_array[ARRAY_SIZE];
@@ -319,7 +320,8 @@ int main(void)
 
     calc_meson_mom_lab(count_pions, pion_decay_dist_array, pion_mom_array, pion_mass, pion_neutr_mom_l_lab_array,
                        pion_neutr_mom_t_lab_array, valid_neutr_energy_lab_array, &count_valid_neutr, 1.0,
-                       valid_neutr_mom_l_lab_array, valid_neutr_mom_t_lab_array, valid_neutr_decay_dist, &count_pion_neutr);
+                       valid_neutr_mom_l_lab_array, valid_neutr_mom_t_lab_array, valid_neutr_decay_dist,
+                       &count_pion_neutr, valid_neutr_meson_type, 'p');
 
 //    disp_histo(count_pion_neutr, pion_neutr_mom_l_lab_array, "Pion neutrino longitudinal momentum distribution", "Momentum");
 //    disp_histo(count_pion_neutr, pion_neutr_mom_t_lab_array, "Pion neutrino transverse momentum distribution", "Momentum");
@@ -331,7 +333,8 @@ int main(void)
 
     calc_meson_mom_lab(count_kaons, kaon_decay_dist_array, kaon_mom_array, kaon_mass, kaon_neutr_mom_l_lab_array,
                        kaon_neutr_mom_t_lab_array, valid_neutr_energy_lab_array, &count_valid_neutr, 0.64,
-                       valid_neutr_mom_l_lab_array, valid_neutr_mom_t_lab_array, valid_neutr_decay_dist, &count_kaon_neutr);
+                       valid_neutr_mom_l_lab_array, valid_neutr_mom_t_lab_array, valid_neutr_decay_dist,
+                       &count_kaon_neutr, valid_neutr_meson_type, 'k');
 
 //    disp_histo(count_kaon_neutr, kaon_neutr_mom_l_lab_array, "Kaon neutrino longitudinal momentum distribution", "Momentum");
 //    disp_histo(count_kaon_neutr, kaon_neutr_mom_t_lab_array, "Kaon neutrino transverse momentum distribution", "Momentum");
@@ -339,30 +342,48 @@ int main(void)
     int count_neutr_radial_pos;
     static double on_target_neutr_energy_array[ARRAY_SIZE];
     static double on_target_neutr_rad_pos_array[ARRAY_SIZE];
-    double rad_pos;
-    int count_on_target_rad_pos = 1;
+    double rad_pos, valid_neutr_mom_l_lab;
+    int count_on_target_neutr = 0;
+    int count_neutr_from_pions = 0;
 
-    for (count_neutr_radial_pos = 1; count_neutr_radial_pos < count_valid_neutr; count_neutr_radial_pos++)
+    for (count_neutr_radial_pos = 0; count_neutr_radial_pos < count_valid_neutr; count_neutr_radial_pos++)
     {
-        rad_pos = calc_rad_pos(valid_neutr_mom_t_lab_array[count_neutr_radial_pos], valid_neutr_mom_l_lab_array[count_neutr_radial_pos], valid_neutr_decay_dist[count_neutr_radial_pos]);
-        if (rad_pos <= 1.5)
+        valid_neutr_mom_l_lab = valid_neutr_mom_l_lab_array[count_neutr_radial_pos];
+        if (valid_neutr_mom_l_lab >= 0.0)
         {
-            on_target_neutr_rad_pos_array[count_on_target_rad_pos] = rad_pos;
-            on_target_neutr_energy_array[count_on_target_rad_pos] = valid_neutr_energy_lab_array[count_neutr_radial_pos];
-            count_on_target_rad_pos++;
+            // this neutrino went in the +ve x direction - must filter these out otherwise we could get a -ve
+            // radial position
+            rad_pos = calc_rad_pos(valid_neutr_mom_t_lab_array[count_neutr_radial_pos], valid_neutr_mom_l_lab, valid_neutr_decay_dist[count_neutr_radial_pos]);
+            if (rad_pos <= 1.5)
+            {
+                // on target neutrino
+                if ('p' == valid_neutr_meson_type[count_neutr_radial_pos])
+                {
+                    count_neutr_from_pions++;
+                }
+                on_target_neutr_rad_pos_array[count_on_target_neutr] = rad_pos;
+                on_target_neutr_energy_array[count_on_target_neutr] = valid_neutr_energy_lab_array[count_neutr_radial_pos];
+                count_on_target_neutr++;
+            }
         }
     }
 
-    display_scatter(count_on_target_rad_pos, on_target_neutr_rad_pos_array, on_target_neutr_energy_array, 0.0, 1.5, 0, 250.0, "Neutrino energy (lab frame) vs detector radial position", "Radial position (m)", "Neutrino energy (GeV)");
+    display_scatter(count_on_target_neutr, on_target_neutr_rad_pos_array, on_target_neutr_energy_array, 0.0, 1.5, 0, 230.0, "Pion and kaon neutrino energy (lab frame) vs detector radial interaction point", "Detector radial interaction point (m)", "Pion and kaon neutrino energy (lab frame) (GeV)");
 
     cpgend();
+
+    double perc_mesons_to_neutr = 100.0 * count_on_target_neutr / (count_pions + count_kaons);
+    printf("Percentage of initial pions and kaons decaying to neutrinos which reach the detector: %lf %%\n", perc_mesons_to_neutr);
+
+    double perc_neutr_from_pions = 100.0 * count_neutr_from_pions / count_on_target_neutr;
+    printf("Percentage of neutrinos reaching the detector which came from pions: %lf %%\n", perc_neutr_from_pions);
 }
 
 void calc_meson_mom_lab(int count_max, double *meson_decay_dist_array, double *meson_mom_array, double meson_mass,
                         double meson_neutr_mom_l_lab_array[], double meson_neutr_mom_t_lab_array[],
                         double valid_neutr_energy_lab_array[], int *count_valid_neutr, double decay_prob,
                         double valid_neutr_mom_l_lab[], double valid_neutr_mom_t_lab[], double valid_neutr_decay_dist[],
-                        int *count_meson_neutr) {
+                        int *count_meson_neutr, char valid_neutr_meson_type[], char this_meson_type) {
     // calculate momenta of neutrinos in lab frame
     int count_neutr_mom;
     double beta, gamma_var, neutr_cos_theta_rest, neutr_mom_l_rest, neutr_mom_t_rest, neutr_energy_rest, neutr_mom_l_lab, neutr_mom_t_lab;
@@ -392,6 +413,7 @@ void calc_meson_mom_lab(int count_max, double *meson_decay_dist_array, double *m
                 valid_neutr_mom_l_lab[*count_valid_neutr] = neutr_mom_l_lab;
                 valid_neutr_mom_t_lab[*count_valid_neutr] = neutr_mom_t_lab;
                 valid_neutr_decay_dist[*count_valid_neutr] = meson_decay_dist_array[count_neutr_mom];
+                valid_neutr_meson_type[*count_valid_neutr] = this_meson_type;
 
                 *count_valid_neutr = *count_valid_neutr + 1;
                 *count_meson_neutr = *count_meson_neutr + 1;
