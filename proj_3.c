@@ -54,7 +54,7 @@ void box_muller(double distr_mean, double distr_width, double * value_1, double 
 
     int count;
 
-    for (count = 1; count < max_steps; count++)
+    for (count = 0; count < max_steps; count++)
     {
         x_1 = drand48();
         x_2 = drand48();
@@ -119,7 +119,13 @@ void disp_histo(int num, double vals[], char * heading, char * x_label)
     /*
      * Now plot a histogram
      */
-    cpgsci(15);
+
+    // for display
+//    cpgsci(15);
+
+    // for outputting to ps file
+    cpgsci(1);
+
     cpghist(num, fvals, v_min, v_max, 200,0);
 //    printf("v_min: %f, v_max: %f", v_min, v_max);
     cpglab(x_label, "Counts", heading);
@@ -141,7 +147,12 @@ void disp_histo_custom_v(int num, double vals[], char * heading, char * x_label,
     /*
      * Now plot a histogram
      */
-    cpgsci(15);
+    // for display
+//    cpgsci(15);
+
+    // for outputting ps file
+    cpgsci(1);
+
     cpghist(num, fvals, v_min, v_max, 200,0);
 //    printf("v_min: %f, v_max: %f", v_min, v_max);
     cpglab(x_label, "Counts", heading);
@@ -246,9 +257,9 @@ int main(void)
      * will prompt the user to supply the device name and type.
      */
 //    if (1 != cpgbeg(0, "?", 1, 1))
-    if (1 != cpgbeg(0, "/XWINDOW", 1, 1))
+//    if (1 != cpgbeg(0, "/XWINDOW", 1, 1))
 //    if (1 != cpgbeg(0, "proj_3_plot.ps/VCPS", 1, 1))
-//    if (1 != cpgbeg(0, "proj_3_plot.ps/CPS", 1, 1))
+    if (1 != cpgbeg(0, "proj_3_plot.ps/CPS", 1, 1))
     {
         exit(EXIT_FAILURE);
     }
@@ -263,11 +274,11 @@ int main(void)
     static double kaon_mom_array[ARRAY_SIZE];
     double stnd_val_1, stnd_val_2;
 
-    for (count_meson_mom = 1; count_meson_mom < ARRAY_SIZE; count_meson_mom++)
+    for (count_meson_mom = 0; count_meson_mom < ARRAY_SIZE; count_meson_mom++)
     {
         box_muller(200, 10, &stnd_val_1, &stnd_val_2);
         // select which type of meson we have
-        if (drand48() <+ 0.86) {
+        if (drand48() <= 0.86) {
             // pion
             pion_mom_array[count_pions] = stnd_val_1;
             count_pions++;
@@ -280,27 +291,30 @@ int main(void)
     }
 
     // plot meson momenta
-//    disp_histo(count_pions, pion_mom_array, "Pion momentum distribution", "Momentum");
-//    disp_histo(count_kaons, kaon_mom_array, "Kaon momentum distribution", "Momentum");
+    disp_histo(count_pions, pion_mom_array, "Figure 4 - Histogram of pion momentum distribution", "Momentum (GeV/c)");
+    disp_histo(count_kaons, kaon_mom_array, "Figure 5 - Histogram of Kaon momentum distribution", "Momentum (GeV/c)");
 
+
+    printf("\n\nStart\n\nNumber of pions: %d\n", count_pions);
+    printf("Number of kaons: %d\n\n", count_kaons);
 
     // decay distances
     int count_decay_distances;
     static double pion_decay_dist_array[ARRAY_SIZE];
     static double kaon_decay_dist_array[ARRAY_SIZE];
 
-    for (count_decay_distances = 1; count_decay_distances < count_pions; count_decay_distances++)
+    for (count_decay_distances = 0; count_decay_distances < count_pions; count_decay_distances++)
     {
         pion_decay_dist_array[count_decay_distances] = meson_distance_travelled(pion_mom_array[count_decay_distances], pion_mass, inverse_trans_meson_decay_time(pion_life));
     }
 
-    for (count_decay_distances = 1; count_decay_distances < count_kaons; count_decay_distances++)
+    for (count_decay_distances = 0; count_decay_distances < count_kaons; count_decay_distances++)
     {
         kaon_decay_dist_array[count_decay_distances] = meson_distance_travelled(kaon_mom_array[count_decay_distances], kaon_mass, inverse_trans_meson_decay_time(kaon_life));
     }
 
-//    disp_histo_custom_v(count_decay_distances, pion_decay_dist_array, "Pion decay distances", "Decay distance", 0.0, 10000.0);
-//    disp_histo_custom_v(count_decay_distances, kaon_decay_dist_array, "Kaon decay distances", "Decay distance", 0.0, 10000.0);
+    disp_histo_custom_v(count_decay_distances, pion_decay_dist_array, "Figure 6 - Histogram of pion decay distance (up to arbitrary limit of 10,000m)", "Decay distance (m)", 0.0, 10000.0);
+    disp_histo_custom_v(count_decay_distances, kaon_decay_dist_array, "Figure 7 - Histogram of kaon decay distance (up to arbitrary limit of 10,000m)", "Decay distance (m)", 0.0, 10000.0);
 
     // simulate neutrino direction and calculate momentum distribution of pion neutrinos in lab frame
     double neutr_cos_theta_rest, neutr_mom_l_rest, neutr_mom_t_rest, neutr_energy_rest;
@@ -323,8 +337,8 @@ int main(void)
                        valid_neutr_mom_l_lab_array, valid_neutr_mom_t_lab_array, valid_neutr_decay_dist,
                        &count_pion_neutr, valid_neutr_meson_type, 'p');
 
-//    disp_histo(count_pion_neutr, pion_neutr_mom_l_lab_array, "Pion neutrino longitudinal momentum distribution", "Momentum");
-//    disp_histo(count_pion_neutr, pion_neutr_mom_t_lab_array, "Pion neutrino transverse momentum distribution", "Momentum");
+    disp_histo(count_pion_neutr, pion_neutr_mom_l_lab_array, "Figure 8 - Pion neutrino longitudinal momentum distribution (ignoring finite size of detector)", "Momentum (GeV/c)");
+    disp_histo(count_pion_neutr, pion_neutr_mom_t_lab_array, "Figure 9 - Pion neutrino transverse momentum distribution (ignoring finite size of detector)", "Momentum (GeV/c)");
 
     // kaons
     static double kaon_neutr_mom_l_lab_array[ARRAY_SIZE];
@@ -336,13 +350,13 @@ int main(void)
                        valid_neutr_mom_l_lab_array, valid_neutr_mom_t_lab_array, valid_neutr_decay_dist,
                        &count_kaon_neutr, valid_neutr_meson_type, 'k');
 
-//    disp_histo(count_kaon_neutr, kaon_neutr_mom_l_lab_array, "Kaon neutrino longitudinal momentum distribution", "Momentum");
-//    disp_histo(count_kaon_neutr, kaon_neutr_mom_t_lab_array, "Kaon neutrino transverse momentum distribution", "Momentum");
+    disp_histo(count_kaon_neutr, kaon_neutr_mom_l_lab_array, "Figure 10 - Kaon neutrino longitudinal momentum distribution (ignoring finite size of detector)", "Momentum (GeV/c)");
+    disp_histo(count_kaon_neutr, kaon_neutr_mom_t_lab_array, "Figure 11 - Kaon neutrino transverse momentum distribution (ignoring finite size of detector)", "Momentum (GeV/c)");
 
     int count_neutr_radial_pos;
     static double on_target_neutr_energy_array[ARRAY_SIZE];
     static double on_target_neutr_rad_pos_array[ARRAY_SIZE];
-    double rad_pos, valid_neutr_mom_l_lab;
+    double rad_pos, valid_neutr_mom_l_lab, last_pion_neutr_energy, last_kaon_neutr_energy;
     int count_on_target_neutr = 0;
     int count_neutr_from_pions = 0;
 
@@ -357,10 +371,13 @@ int main(void)
             if (rad_pos <= 1.5)
             {
                 // on target neutrino
-                if ('p' == valid_neutr_meson_type[count_neutr_radial_pos])
-                {
+                if ('p' == valid_neutr_meson_type[count_neutr_radial_pos]) {
+                    last_pion_neutr_energy = valid_neutr_energy_lab_array[count_neutr_radial_pos];
                     count_neutr_from_pions++;
+                } else {
+                    last_kaon_neutr_energy = valid_neutr_energy_lab_array[count_neutr_radial_pos];
                 }
+
                 on_target_neutr_rad_pos_array[count_on_target_neutr] = rad_pos;
                 on_target_neutr_energy_array[count_on_target_neutr] = valid_neutr_energy_lab_array[count_neutr_radial_pos];
                 count_on_target_neutr++;
@@ -368,14 +385,16 @@ int main(void)
         }
     }
 
-    display_scatter(count_on_target_neutr, on_target_neutr_rad_pos_array, on_target_neutr_energy_array, 0.0, 1.5, 0, 230.0, "Pion and kaon neutrino energy (lab frame) vs detector radial interaction point", "Detector radial interaction point (m)", "Pion and kaon neutrino energy (lab frame) (GeV)");
+    display_scatter(count_on_target_neutr, on_target_neutr_rad_pos_array, on_target_neutr_energy_array, 0.0, 1.5, 0, 230.0, "Figure 13 - pion & kaon neutrino energy (lab frame) vs detector radial interaction point", "Detector radial interaction point (m)", "Pion and kaon neutrino energy (lab frame) (GeV)");
 
     cpgend();
 
-    double perc_mesons_to_neutr = 100.0 * count_on_target_neutr / (count_pions + count_kaons);
+    printf("\nLast value of pion neutrino energy: %lf. \nLast value of kaon neutrino energy: %lf.\n\n", last_pion_neutr_energy, last_kaon_neutr_energy);
+
+    double perc_mesons_to_neutr = 100.0 * (double)count_on_target_neutr / ((double)count_pions + (double)count_kaons);
     printf("Percentage of initial pions and kaons decaying to neutrinos which reach the detector: %lf %%\n", perc_mesons_to_neutr);
 
-    double perc_neutr_from_pions = 100.0 * count_neutr_from_pions / count_on_target_neutr;
+    double perc_neutr_from_pions = 100.0 * (double)count_neutr_from_pions / (double)count_on_target_neutr;
     printf("Percentage of neutrinos reaching the detector which came from pions: %lf %%\n", perc_neutr_from_pions);
 }
 
@@ -388,7 +407,8 @@ void calc_meson_mom_lab(int count_max, double *meson_decay_dist_array, double *m
     int count_neutr_mom;
     double beta, gamma_var, neutr_cos_theta_rest, neutr_mom_l_rest, neutr_mom_t_rest, neutr_energy_rest, neutr_mom_l_lab, neutr_mom_t_lab;
     double neutr_mom_mag_rest = calculate_neut_mom_mag(meson_mass);
-    for (count_neutr_mom = 1; count_neutr_mom < count_max; count_neutr_mom++)
+    printf("Neutrino momentum magnitude - meson type: %c, magnitude: %lf\n", this_meson_type, neutr_mom_mag_rest);
+    for (count_neutr_mom = 0; count_neutr_mom < count_max; count_neutr_mom++)
     {
         if (meson_decay_dist_array[count_neutr_mom] <= 300.0)
         {
