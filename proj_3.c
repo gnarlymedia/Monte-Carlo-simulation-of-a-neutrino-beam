@@ -257,9 +257,8 @@ int main(void)
      * will prompt the user to supply the device name and type.
      */
 //    if (1 != cpgbeg(0, "?", 1, 1))
-//    if (1 != cpgbeg(0, "/XWINDOW", 1, 1))
-//    if (1 != cpgbeg(0, "proj_3_plot.ps/VCPS", 1, 1))
-    if (1 != cpgbeg(0, "proj_3_plot.ps/CPS", 1, 1))
+    if (1 != cpgbeg(0, "/XWINDOW", 1, 1))
+//    if (1 != cpgbeg(0, "proj_3_plot.ps/CPS", 1, 1))
     {
         exit(EXIT_FAILURE);
     }
@@ -359,6 +358,7 @@ int main(void)
     double rad_pos, valid_neutr_mom_l_lab, last_pion_neutr_energy, last_kaon_neutr_energy;
     int count_on_target_neutr = 0;
     int count_neutr_from_pions = 0;
+    int count_neutr_from_kaons = 0;
 
     for (count_neutr_radial_pos = 0; count_neutr_radial_pos < count_valid_neutr; count_neutr_radial_pos++)
     {
@@ -376,6 +376,7 @@ int main(void)
                     count_neutr_from_pions++;
                 } else {
                     last_kaon_neutr_energy = valid_neutr_energy_lab_array[count_neutr_radial_pos];
+                    count_neutr_from_kaons++;
                 }
 
                 on_target_neutr_rad_pos_array[count_on_target_neutr] = rad_pos;
@@ -393,6 +394,12 @@ int main(void)
 
     double perc_mesons_to_neutr = 100.0 * (double)count_on_target_neutr / ((double)count_pions + (double)count_kaons);
     printf("Percentage of initial pions and kaons decaying to neutrinos which reach the detector: %lf %%\n", perc_mesons_to_neutr);
+
+    double perc_pions_to_neutr = 100.0 * (double)count_neutr_from_pions / (double)count_pions;
+    printf("Percentage of initial pions decaying to neutrinos which reach the detector: %lf %%\n", perc_pions_to_neutr);
+
+    double perc_kaons_to_neutr = 100.0 * (double)count_neutr_from_kaons / (double)count_kaons;
+    printf("Percentage of initial kaons decaying to neutrinos which reach the detector: %lf %%\n", perc_kaons_to_neutr);
 
     double perc_neutr_from_pions = 100.0 * (double)count_neutr_from_pions / (double)count_on_target_neutr;
     printf("Percentage of neutrinos reaching the detector which came from pions: %lf %%\n", perc_neutr_from_pions);
